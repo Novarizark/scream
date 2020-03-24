@@ -16,15 +16,13 @@ function(CreateUnitTest target_name target_srcs scream_libs)
   set(multiValueArgs MPI_RANKS THREADS CONFIG_DEFS INCLUDE_DIRS)
   cmake_parse_arguments(CreateUnitTest "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN} )
 
-  # Set link directories (must be done BEFORE add_executable is called)
-  link_directories(${SCREAM_TPL_LIBRARY_DIRS})
-
   # Create the executable
   set (SRC_MAIN ${SCREAM_SRC_DIR}/share/util/scream_catch_main.cpp)
   if (CreateUnitTest_EXCLUDE_MAIN_CPP)
     set (SRC_MAIN)
   endif ()
   add_executable (${target_name} ${target_srcs} ${SRC_MAIN})
+  target_link_directories(${target_name} PUBLIC ${SCREAM_TPL_LIBRARY_DIRS})
 
   set (TEST_INCLUDE_DIRS
        ${SCREAM_INCLUDE_DIRS}
