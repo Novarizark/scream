@@ -279,7 +279,7 @@ end subroutine micro_p3_readnl
    call pbuf_add_field('PRER_EVAP',  'global', dtype_r8,(/pcols,pver/), prer_evap_idx)
 
    !! module radiation_data & module cloud_rad_props
-   call pbuf_add_field('DEI',        'physpkg',dtype_r8,(/pcols,pver/), dei_idx)
+   call pbuf_add_field('DEI',        'global',dtype_r8,(/pcols,pver/), dei_idx)
    call pbuf_add_field('MU',         'physpkg',dtype_r8,(/pcols,pver/), mu_idx)
    call pbuf_add_field('LAMBDAC',    'physpkg',dtype_r8,(/pcols,pver/), lambdac_idx)
 
@@ -387,6 +387,9 @@ end subroutine micro_p3_readnl
        call pbuf_set_field(pbuf2d, relvar_idx, 2._rtype)
        call pbuf_set_field(pbuf2d, accre_enhan_idx, micro_mg_accre_enhan_fac)
        call pbuf_set_field(pbuf2d, prer_evap_idx,  0._rtype)
+       call pbuf_set_field(pbuf2d, dei_idx,  0._rtype)
+       call pbuf_set_field(pbuf2d, rei_idx,  0._rtype)
+       call pbuf_set_field(pbuf2d, rel_idx,  0._rtype)
  
     end if
 
@@ -971,7 +974,7 @@ end subroutine micro_p3_readnl
  
     psetcols = state%psetcols
     lchnk = state%lchnk
-    ngrdcol  = state%ngrdcol
+    ngrdcol  = state%ncol !ngrdcol
 
     !+++ Aaron Donahue
     itim_old = pbuf_old_tim_idx()
@@ -1351,7 +1354,7 @@ end subroutine micro_p3_readnl
    !! Effective radius for cloud liquid
    rel(:ngrdcol,top_lev:) = rel(:ngrdcol,top_lev:) * 1e6_rtype  ! Rescale rel to be in microns
    !! Effective radius for cloud ice
-   rei(:ngrdcol,top_lev:) = rei(:ngrdcol,top_lev:) * 1e6_rtype  ! Rescale rei to be in microns
+   rei(:ngrdcol,top_lev:) = 1.5_rtype/rei(:ngrdcol,top_lev:) * 1e6_rtype  ! Rescale rei to be in microns
    !! Effective diameter for cloud ice
    dei(:ngrdcol,top_lev:) = rei(:ngrdcol,top_lev:) * diag_rhoi(:ngrdcol,top_lev:)/rhows * 2._rtype
 
