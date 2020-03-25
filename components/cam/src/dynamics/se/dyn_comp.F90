@@ -255,7 +255,7 @@ CONTAINS
 #ifdef HORIZ_OPENMP
        if (iam==0) write (iulog,*) "dyn_init2: hthreads=",hthreads,&
                                    "max_threads=",omp_get_max_threads()
-       !$OMP PARALLEL NUM_THREADS(hthreads), DEFAULT(SHARED), PRIVATE(ie,ithr,nets,nete,hybrid)
+!ASD       !$OMP PARALLEL NUM_THREADS(hthreads), DEFAULT(SHARED), PRIVATE(ie,ithr,nets,nete,hybrid)
 #endif
 #ifdef COLUMN_OPENMP
        call omp_set_num_threads(vthreads)
@@ -319,7 +319,7 @@ CONTAINS
        endif
        call prim_init2(elem,hybrid,nets,nete, TimeLevel, hvcoord)
 #ifdef HORIZ_OPENMP
-       !$OMP END PARALLEL 
+!ASD       !$OMP END PARALLEL 
 #endif
     end if
 
@@ -362,7 +362,7 @@ CONTAINS
 #ifdef HORIZ_OPENMP
        !if (iam==0) write (iulog,*) "dyn_run: hthreads=",hthreads,&
        !                            "max_threads=",omp_get_max_threads()
-       !$OMP PARALLEL NUM_THREADS(hthreads), DEFAULT(SHARED), PRIVATE(ithr,nets,nete,hybrid,n)
+!ASD       !$OMP PARALLEL NUM_THREADS(hthreads), DEFAULT(SHARED), PRIVATE(ithr,nets,nete,hybrid,n)
 #endif
 #ifdef COLUMN_OPENMP
        ! nested threads
@@ -388,7 +388,7 @@ CONTAINS
        endif
 
 #ifdef HORIZ_OPENMP
-       !$OMP END PARALLEL
+!ASD       !$OMP END PARALLEL
 #endif
     end if
     rc = DYN_RUN_SUCCESS
