@@ -284,8 +284,8 @@ end subroutine micro_p3_readnl
    call pbuf_add_field('LAMBDAC',    'physpkg',dtype_r8,(/pcols,pver/), lambdac_idx)
 
    !! module cospsimulator_intr
-   call pbuf_add_field('REL',        'physpkg',dtype_r8,(/pcols,pver/), rel_idx)
-   call pbuf_add_field('REI',        'physpkg',dtype_r8,(/pcols,pver/), rei_idx)
+   call pbuf_add_field('REL',        'global',dtype_r8,(/pcols,pver/), rel_idx)
+   call pbuf_add_field('REI',        'global',dtype_r8,(/pcols,pver/), rei_idx)
    call pbuf_add_field('LS_FLXPRC',  'physpkg',dtype_r8,(/pcols,pverp/), ls_flxprc_idx)
    call pbuf_add_field('LS_FLXSNW',  'physpkg',dtype_r8,(/pcols,pverp/), ls_flxsnw_idx)
    call pbuf_add_field('LS_REFFRAIN','physpkg',dtype_r8,(/pcols,pver/), ls_reffrain_idx)
