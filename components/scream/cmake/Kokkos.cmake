@@ -15,6 +15,7 @@ else ()
     set(KOKKOS_ENABLE_DEBUG TRUE)
   endif()
 
+  set (KOKKOS_ENABLE_DEPRECATED_CODE OFF)
   add_subdirectory(${KOKKOS_SRC} ${KOKKOS_BINARY})
 
   set (Kokkos_INCLUDE_DIR "${KOKKOS_SRC}/core/src;${KOKKOS_SRC}/algorithms/src;${KOKKOS_BINARY}")
