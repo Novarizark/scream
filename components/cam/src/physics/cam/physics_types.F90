@@ -246,7 +246,8 @@ contains
 
     ! Whether to do validation of state on each call.
     logical :: state_debug_checks
-
+    ! ASD:
+    logical :: nan_detected = .false.
     !-----------------------------------------------------------------------
 
     ! The column radiation model does not update the state
@@ -310,6 +311,14 @@ contains
           state%u  (:ncol,k) = state%u  (:ncol,k) + ptend%u(:ncol,k) * dt
           if (present(tend)) &
                tend%dudt(:ncol,k) = tend%dudt(:ncol,k) + ptend%u(:ncol,k)
+          !-ASD
+          do i =1,ncol
+            if (state%u(i,k) /= state%u(i,k)) then
+              write(iulog,'(A30,A40,A15,i4,i4)') "NaN detected for U after ", trim(name), " at i,k = ",i, k
+              nan_detected = .true.
+            end if 
+          end do
+          !-ASD
        end do
     end if
 
@@ -318,6 +327,14 @@ contains
           state%v  (:ncol,k) = state%v  (:ncol,k) + ptend%v(:ncol,k) * dt
           if (present(tend)) &
                tend%dvdt(:ncol,k) = tend%dvdt(:ncol,k) + ptend%v(:ncol,k)
+          !-ASD
+          do i =1,ncol
+            if (state%v(i,k) /= state%v(i,k)) then
+              write(iulog,'(A30,A40,A15,i4,i4)') "NaN detected for V after ", trim(name), " at i,k = ",i, k
+              nan_detected = .true.
+            end if 
+          end do
+          !-ASD
        end do
     end if
 
@@ -357,11 +374,19 @@ contains
                 state%q(:ncol,k,m) = min(1.e10_r8,state%q(:ncol,k,m))
              end do
           end if
-
+!ASD - check to see if there are any NaNs in the Q array
+         do k = ptend%top_level, ptend%bot_level
+           do i =1,ncol
+             if (state%q(i,k,m) /= state%q(i,k,m)) then
+               write(iulog,'(A30,A40,A15,i4,i4,i4)') "NaN detected for Q after ", trim(name), " at i,k,m = ",i, k, m
+               nan_detected = .true.
+             end if 
+           end do
+         end do
+!ASD
        end if
 
     end do
-
     !------------------------------------------------------------------------
     ! This is a temporary fix for the large H, H2 in WACCM-X
     ! Well, it was supposed to be temporary, but it has been here
@@ -432,6 +457,14 @@ contains
 ! we first assume that dS is really dEn, En=enthalpy=c_p*T, then 
 ! dT = dEn/c_p, so, state%t += ds/c_p.
           state%t(:ncol,k) = state%t(:ncol,k) + ptend%s(:ncol,k)/cpairv_loc(:ncol,k,state%lchnk) * dt
+          !-ASD
+          do i =1,ncol
+            if (state%t(i,k) /= state%t(i,k)) then
+              write(iulog,'(A30,A40,A15,i4,i4)') "NaN detected for T after ", trim(name), " at i,k = ",i, k
+              nan_detected = .true.
+            end if 
+          end do
+          !-ASD
        end do
     end if
 
@@ -467,6 +500,9 @@ contains
     ptend%lu    = .false.
     ptend%lv    = .false.
     ptend%psetcols = 0
+    !-ASD
+    if (nan_detected) call endrun("ASD - NaN detected")
+    !-ASD
     call t_stopf ('physics_update_main')
 
   contains

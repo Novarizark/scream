@@ -1154,7 +1154,7 @@ contains
     ! Print some diagnostic information
     ! ============================================================
     if (compute_diagnostics) then
-       call prim_printstate(elem, tl, hybrid,hvcoord,nets,nete)
+       !call prim_printstate(elem, tl, hybrid,hvcoord,nets,nete)
     end if
   end subroutine prim_run_subcycle
 
