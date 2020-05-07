@@ -758,7 +758,6 @@ end subroutine micro_p3_readnl
     real(rtype), pointer :: snow_str(:)    ! [Total] Sfc flux of snow from stratiform   [ m/s ]
     real(rtype), pointer :: snow_pcw(:)    ! Sfc flux of snow from microphysics [ m/s ]
     real(rtype), pointer :: snow_sed(:)    ! Surface flux of cloud ice from sedimentation
-    real(rtype), pointer :: relvar(:,:)    ! cloud water rleative variance     
     real(rtype), pointer :: cldo(:,:)      ! Old cloud fraction
     real(rtype), pointer :: prer_evap(:,:) ! precipitation evaporation rate 
     !! wetdep 
@@ -848,8 +847,6 @@ end subroutine micro_p3_readnl
     call pbuf_get_field(pbuf,    snow_pcw_idx,  snow_pcw)
     !============================ 
     ! All internal PBUF variables
-    call pbuf_get_field(pbuf, relvar_idx,      relvar,      col_type=col_type, copy_if_needed=use_subcol_microp)
-
     ! OUTPUTS
     call pbuf_get_field(pbuf,        cldo_idx,      cldo, start=(/1,1,itim_old/), kount=(/psetcols,pver,1/))
     call pbuf_get_field(pbuf,         qme_idx,       qme                                                   )
