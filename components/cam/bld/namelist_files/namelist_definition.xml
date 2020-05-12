@@ -2174,28 +2174,28 @@ Default: TRUE
 </entry>
 
 <!-- micro_p3 -->
-<entry id="p3_prc_relvar_AutoCon" type="real" category="microphysics"
+<entry id="p3_QcAutoCon_Expon" type="real" category="microphysics"
 group="phys_ctl_nl" valid_values="" >
-Tunable SHOC-SGS relvar coefficient in autoconversion 
-Default: 3.19_r8
+Tunable SHOC-SGS relvar exponent in autoconversion 
+Default: 2.47_rtype
 </entry>
 
-<entry id="p3_prc_relvar_CldImmFrz" type="real" category="microphysics"
+<entry id="p3_CldImmFrz_Expon" type="real" category="microphysics"
 group="phys_ctl_nl" valid_values="" >
-Tunable SHOC-SGS relvar coefficient in immersion freezing 
-Default: 2.0_r8
+Tunable SHOC-SGS relvar exponent in immersion freezing 
+Default: 2.0_rtype
 </entry>
 
-<entry id="p3_prc_relvar_Acc1" type="real" category="microphysics"
+<entry id="p3_QcAccret_Fact" type="real" category="microphysics"
 group="phys_ctl_nl" valid_values="" >
-Tunable SHOC-SGS relvar coefficient #1 in accresion 
-Default: 1.5_r8
+Tunable SHOC-SGS relvar coefficient in accresion 
+Default: 1.5_rtype
 </entry>
 
-<entry id="p3_prc_relvar_Acc2" type="real" category="microphysics"
+<entry id="p3_QcAccret_Expon" type="real" category="microphysics"
 group="phys_ctl_nl" valid_values="" >
-Tunable SHOC-SGS relvar coefficient #2 in accresion 
-Default: 1.15_r8
+Tunable SHOC-SGS relvar exponent in accresion 
+Default: 1.15_rtype
 </entry>
 
 <!-- micro_mg -->

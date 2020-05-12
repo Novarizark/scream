@@ -35,8 +35,7 @@ module micro_p3_interface
   use cam_logfile,    only: iulog
   use time_manager,   only: is_first_step
   use perf_mod,       only: t_startf, t_stopf
-  use micro_p3_utils, only: p3_prc_relvar_AutoCon, p3_prc_relvar_CldImmFrz, p3_prc_relvar_Acc1,       &
-                            p3_prc_relvar_Acc2
+  use micro_p3_utils, only: p3_QcAutoCon_Expon, p3_CldImmFrz_Expon, p3_QcAccret_Fact, p3_QcAccret_Expon
        
   implicit none
   save
@@ -84,7 +83,7 @@ module micro_p3_interface
       cv_reffice_idx,     &
       prer_evap_idx,      &
       cmeliq_idx,         &
-      relvar_idx,         &
+      qc_relvar_idx,      &
       accre_enhan_idx     
 
 ! Physics buffer indices for fields registered by other modules
@@ -118,6 +117,7 @@ module micro_p3_interface
    logical            :: micro_aerosolactivation = .false.   ! Use aerosol activation
    logical            :: micro_subgrid_cloud     = .false.   ! Use subgrid cloudiness
    logical            :: micro_tend_output       = .false.   ! Default microphysics tendencies to output file
+
    contains
 !===============================================================================
 subroutine micro_p3_readnl(nlfile)
@@ -134,8 +134,7 @@ subroutine micro_p3_readnl(nlfile)
 
   namelist /micro_nl/ &
        micro_p3_tableversion, micro_p3_lookup_dir, micro_aerosolactivation, micro_subgrid_cloud,    &
-       micro_tend_output, p3_prc_relvar_AutoCon, p3_prc_relvar_CldImmFrz, p3_prc_relvar_Acc1,       &
-       p3_prc_relvar_Acc2
+       micro_tend_output, p3_QcAutoCon_Expon, p3_CldImmFrz_Expon, p3_QcAccret_Fact, p3_QcAccret_Expon
 
   !-----------------------------------------------------------------------------
 
@@ -158,6 +157,10 @@ subroutine micro_p3_readnl(nlfile)
      write(iulog,'(A30,1x,L)')    'micro_aerosolactivation: ', micro_aerosolactivation
      write(iulog,'(A30,1x,L)')    'micro_subgrid_cloud: ',     micro_subgrid_cloud
      write(iulog,'(A30,1x,L)')    'micro_tend_output: ',       micro_tend_output
+     write(iulog,*)               'p3_QcAutoCon_Expon:',        p3_QcAutoCon_Expon
+     write(iulog,*)               'p3_CldImmFrz_Expon:',        p3_CldImmFrz_Expon
+     write(iulog,*)               'p3_QcAccret_Fact:',          p3_QcAccret_Fact
+     write(iulog,*)               'p3_QcAccret_Expon:',         p3_QcAccret_Expon
 
   end if
 
@@ -168,6 +171,10 @@ subroutine micro_p3_readnl(nlfile)
   call mpibcast(micro_aerosolactivation, 1,                          mpilog,  0, mpicom)
   call mpibcast(micro_subgrid_cloud,     1,                          mpilog,  0, mpicom)
   call mpibcast(micro_tend_output,       1,                          mpilog,  0, mpicom)
+  call mpibcast(p3_QcAutoCon_Expon,      1,                          mpir8,  0, mpicom)
+  call mpibcast(p3_CldImmFrz_Expon,      1,                          mpir8,  0, mpicom)
+  call mpibcast(p3_QcAccret_Fact,        1,                          mpir8,  0, mpicom)
+  call mpibcast(p3_QcAccret_Expon,       1,                          mpir8,  0, mpicom)
 
 #endif
 
@@ -267,7 +274,7 @@ end subroutine micro_p3_readnl
  
    !! module clubb_intr (AaronDonahue: I think these are for MG only.  Should
    !  we remove?  If so, then we will have to make changes to CLUBB interface.
-   call pbuf_add_field('RELVAR',     'global',dtype_r8,(/pcols,pver/), relvar_idx)
+   call pbuf_add_field('QC_RELVAR',     'global',dtype_r8,(/pcols,pver/), qc_relvar_idx)
    call pbuf_add_field('ACCRE_ENHAN','global',dtype_r8,(/pcols,pver/), accre_enhan_idx)
 
    if (masterproc) write(iulog,'(A20)') '    P3 register finished'
@@ -349,7 +356,7 @@ end subroutine micro_p3_readnl
     if (is_first_step()) then
 
        call pbuf_set_field(pbuf2d, cldo_idx,   0._rtype)
-       call pbuf_set_field(pbuf2d, relvar_idx, 2._rtype)
+       call pbuf_set_field(pbuf2d, qc_relvar_idx, 2._rtype)
        call pbuf_set_field(pbuf2d, accre_enhan_idx, micro_mg_accre_enhan_fac)
        call pbuf_set_field(pbuf2d, prer_evap_idx,  0._rtype)
  
@@ -758,6 +765,7 @@ end subroutine micro_p3_readnl
     real(rtype), pointer :: snow_str(:)    ! [Total] Sfc flux of snow from stratiform   [ m/s ]
     real(rtype), pointer :: snow_pcw(:)    ! Sfc flux of snow from microphysics [ m/s ]
     real(rtype), pointer :: snow_sed(:)    ! Surface flux of cloud ice from sedimentation
+    real(rtype), pointer :: qc_relvar(:,:) ! cloud liquid relative variance     [-]
     real(rtype), pointer :: cldo(:,:)      ! Old cloud fraction
     real(rtype), pointer :: prer_evap(:,:) ! precipitation evaporation rate 
     !! wetdep 
@@ -847,6 +855,8 @@ end subroutine micro_p3_readnl
     call pbuf_get_field(pbuf,    snow_pcw_idx,  snow_pcw)
     !============================ 
     ! All internal PBUF variables
+    ! INPUTS
+    call pbuf_get_field(pbuf,   qc_relvar_idx, qc_relvar                                                   )
     ! OUTPUTS
     call pbuf_get_field(pbuf,        cldo_idx,      cldo, start=(/1,1,itim_old/), kount=(/psetcols,pver,1/))
     call pbuf_get_field(pbuf,         qme_idx,       qme                                                   )
@@ -984,7 +994,7 @@ end subroutine micro_p3_readnl
       p3_main_inputs(1,k,14) = qirim(1,k)
       p3_main_inputs(1,k,15) = rimvol(1,k)
       p3_main_inputs(1,k,16) = state%pdel(1,k)
-      p3_main_inputs(1,k,17) = relvar(1,k)
+      p3_main_inputs(1,k,17) = qc_relvar(1,k)
     end do
     p3_main_inputs(1,pver+1,5) = state%zi(1,pver+1)
 
@@ -1045,7 +1055,7 @@ end subroutine micro_p3_readnl
          vap_ice_exchange(its:ite,kts:kte),& ! OUT sum of vap-ice phase change tendencies
          vap_cld_exchange(its:ite,kts:kte),& ! OUT sum of vap-cld phase change tendencies
          col_location(its:ite,:3),         & ! IN column locations
-         relvar(its:ite,kts:kte)           & ! IN cloud liquid relative variance from SHOC
+         qc_relvar(its:ite,kts:kte)           & ! IN cloud liquid relative variance from SHOC
          )
 
     p3_main_outputs(:,:,:) = -999._rtype
