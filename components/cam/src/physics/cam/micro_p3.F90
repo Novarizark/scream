@@ -55,8 +55,8 @@ module micro_p3
        masterproc=>masterproc_e3sm, calculate_incloud_mixingratios, mu_r_constant,      &
        lookup_table_1a_dum1_c, use_cxx,                                                 &
        p3_QcAutoCon_Expon, p3_CldImmFrz_Expon, p3_QcAccret_Fact, p3_QcAccret_Expon
-
-  ! Bit-for-bit math functions.
+  
+   ! Bit-for-bit math functions.
 #ifdef SCREAM_CONFIG_IS_CMAKE
   use physics_common_iso_f, only: cxx_pow, cxx_sqrt, cxx_cbrt, cxx_gamma, cxx_log, &
                                   cxx_log10, cxx_exp
