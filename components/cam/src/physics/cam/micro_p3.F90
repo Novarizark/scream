@@ -410,9 +410,15 @@ contains
        dum        = 1.496e-6_rtype * bfb_pow(t(k), 1.5_rtype) / (t(k)+120._rtype)  ! this is mu
        acn(k)     = g*rhow/(18._rtype*dum)  ! 'a' parameter for droplet fallspeed (Stokes' law)
 
-       !specify cloud droplet number (for 1-moment version)
+       !Droplet activation OR specify cloud droplet number (for 1-moment version)
+!+++ JShpund: A condition for minimal cloud drop mass here seems less applicable,
+!             as embrio-clouds forms ontop of CCNs without any prior mass.
+!             Double check with PMC if there is any other reason to enforce that here
+!             as MG2 does (*Erase When Done*)
        if (.not.(log_predictNc)) then
           nc(k) = nccnst*inv_rho(k)
+       else
+          nc(k) = max(nc(k) + npccn(k) * dt,0.0_rtype)
        endif
 
        if ((t(k).lt.zerodegc .and. supi(k).ge.-0.05_rtype) .or.                              &
@@ -462,11 +468,6 @@ contains
        endif
 
        t(k) = th(k) * inv_exner(k)
-
-       !Activaiton of cloud droplets
-       if (log_predictNc) then
-          nc(k) = nc(k) + npccn(k) * dt
-       endif
 
        call calculate_incloud_mixingratios(qc(k),qr(k),qitot(k),qirim(k),nc(k),nr(k),nitot(k),birim(k), &
             inv_lcldm(k),inv_icldm(k),inv_rcldm(k), &
@@ -972,7 +973,7 @@ contains
           !.................................................................
           ! droplet activation
           call droplet_activation(t(i,k),pres(i,k),qv(i,k),qc(i,k),inv_rho(i,k),&
-             sup(i,k),xxlv(i,k),npccn(i,k),log_predictNc,odt,&
+             sup(i,k),xxlv(i,k),npccn(i,k)*inv_lcldm(i,k),log_predictNc,odt,&
              qcnuc,ncnuc)
 
           !................
@@ -1057,9 +1058,9 @@ contains
             th(i,k), qv(i,k), qitot(i,k), nitot(i,k), qirim(i,k), birim(i,k), qc(i,k), nc(i,k), qr(i,k), nr(i,k) )
 
           !-- warm-phase only processes:
-          call update_prognostic_liquid(qcacc, ncacc, qcaut, ncautc, qcnuc, ncautr, ncslf, &
-            qrevp, nrevp, nrslf,  &
-            log_predictNc, inv_rho(i,k), exner(i,k), xxlv(i,k), dt, &
+          call update_prognostic_liquid(qcacc, ncacc, qcaut, ncautc, qcnuc, ncautr, ncslf,  &
+            qrevp, nrevp, nrslf,                                                            &
+            log_predictNc, inv_rho(i,k), exner(i,k), xxlv(i,k), dt,                         &
             th(i,k), qv(i,k), qc(i,k), nc(i,k), qr(i,k), nr(i,k))
 
           !==
@@ -2814,21 +2815,17 @@ subroutine droplet_activation(t,pres,qv,qc,inv_rho,sup,xxlv,npccn,log_predictNc,
    if (log_predictNc) then
       ! for predicted Nc, use activation predicted by aerosol scheme
       ! note that this is also applied at the first time step
-      if (sup.gt.1.e-6) then
+      if (qc .gt. qsmall) then
+! +++ JShpund: 1. Here we need the same condition for nucleation performs at the beginning of the scheme.
+!                 The condition is either on mass "qsmall", liquid supersaturation "sup" or both. (?).
+!                 Given saturation adjustment is fundemental to macrophysics, which values are expected here?
+!              2. "npcc" is in-cloud value here.
+!              3. No need to add "npccn" to the tendency (compared to MG2)!
+!              3. The corresponding mass tendency for nucleation is done in macrophysics and thus is erased here
+!              *Erase When Done*
          ncnuc = npccn
-         !TODO Limit qcnuc so that conditions never become sub-saturated
-         qcnuc = ncnuc*cons7
+         qcnuc = 0.0_rtype
       endif
-   else if (sup.gt.1.e-6) then
-      ! for specified Nc, make sure droplets are present if conditions are supersaturated
-      ! this is not applied at the first time step, since saturation adjustment is applied at the first step
-      dum   = nccnst*inv_rho*cons7-qc
-      dum   = max(0._rtype,dum)
-      dumqvs = qv_sat(t,pres,0)
-      dqsdt = xxlv*dumqvs/(rv*t*t)
-      ab    = 1._rtype + dqsdt*xxlv*inv_cp
-      dum   = min(dum,(qv-dumqvs)/ab)  ! limit overdepletion of supersaturation
-      qcnuc = dum*odt
    endif
 
 end subroutine droplet_activation
@@ -3407,8 +3404,8 @@ subroutine update_prognostic_ice(qcheti,qccol,qcshd,    &
 end subroutine update_prognostic_ice
 
 subroutine update_prognostic_liquid(qcacc,ncacc,qcaut,ncautc,qcnuc,ncautr,ncslf,    &
-    qrevp,nrevp,nrslf,    &
-    log_predictNc,inv_rho,exner,xxlv,dt,    &
+    qrevp,nrevp,nrslf,                                                              &
+    log_predictNc,inv_rho,exner,xxlv,dt,                                      &
     th,qv,qc,nc,qr,nr)
 
 #ifdef SCREAM_CONFIG_IS_CMAKE
